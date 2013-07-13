@@ -5,5 +5,5 @@ OpenShogiLibのサンプルを使った方が圧倒的に速いです。
 コンパイル・実行方法
 # apt-get install libosl-dev
 $ g++ -o tsume tsume.cc -losl
-$ ./tsume 6 9 2 | ./GUIdisplay
+$ ./tsume 6 9 2 | ./BrowserDisplay
 
