@@ -1,0 +1,123 @@
+#!/usr/bin/env ruby
+# -*- coding: utf-8 -*-
+
+require "multiset"
+require "cgi"
+
+PIECE_NAMES = {
+"OU" => "玉",
+"HI" => "飛",
+"KA" => "角",
+"KI" => "金",
+"GI" => "銀",
+"KE" => "桂",
+"KY" => "香",
+"FU" => "歩",
+}
+
+PIECE_NAMES_FULL = {
+  "PROOK"   => "竜",
+  "PBISHOP" => "馬",
+  "PSILVER" => "成銀",
+  "PKNIGHT" => "成桂",
+  "PLANCE"  => "成香",
+  "PPAWN"   => "と",
+  "KING"    => "玉",
+  "ROOK"    => "飛",
+  "BISHOP"  => "角",
+  "GOLD"    => "金",
+  "SILVER"  => "銀",
+  "KNIGHT"  => "桂",
+  "LANCE"   => "香",
+  "PAWN"    => "歩",
+}
+
+open("result.html", "w") do |f|
+  f.puts <<HTML
+<html>
+<head>
+<style type="text/css"><!--
+.board{ border-collapse:collapse; }
+.board td{ padding: 0px; width: 25px; height: 25px; border: 1px solid black; }
+td.outline{ background: silver; border: none; text-align:center; }
+.rank{ color: red; }
+.frame{ vertical-align: top; }
+.note{ white-space: nowrap; }
+--></style>
+</head>
+<body>
+<table><tr><td class=\"frame\">
+HTML
+  ARGF.each_line do |line|
+    if line =~ /^P([1-9])(( \* |[\+\-][A-Z]{2}){9})/
+      height = $1
+      body = $2
+      
+      prefix = ""
+      if height == "1"
+        prefix += "<table class=\"board\"><tr>"
+        for i in (1..9).to_a.reverse
+          prefix += "<td class=\"outline\">#{i}</td>"
+        end
+        prefix += "<td class=\"outline\"></td></tr>"
+      end
+      prefix += "<tr>"
+      suffix = "</tr>" + (height == "9" ? "</table>" : "")
+      
+      body.gsub!(/ \* /, "<td>&nbsp;</td>")
+      body.gsub!(/([\+\-])([A-Z]{2})/){ |player, ptype|
+        "<td><img src=\"image/#{$2.downcase}#{$1 == '+' ? '' : '_r'}.png\" /></td>"
+      }
+      body += "<td class='outline rank'>#{height}</td>"
+      
+      f.puts "#{prefix}#{body}#{suffix}"
+    elsif line =~ /^P([\+\-])/
+      player = $1
+      hands = $'
+      hands = Multiset.new(hands.scan(/00([A-Z]{2})/).map{ |x| x[0] })
+      
+      f.print "<p>#{player == '+' ? '先手' : '後手'}持ち駒："
+      if hands.empty?
+        f.print "なし"
+      else
+        hands.each_pair do |k, v|
+          f.print "#{PIECE_NAMES[k]}#{v == 1 ? '' : v}"
+        end
+      end
+      f.puts "</p>"
+    elsif line =~ /^\-{10}/
+      f.puts "</td><td class=\"frame\"><p>#{line}</p>"
+    else
+      line = CGI.escapeHTML(line)
+      if line =~ /^\s+/
+        prefix = "&nbsp;" * ($&.length * 2)
+        body = $'
+      else
+        prefix = ""
+        body = line
+      end
+      
+      body.gsub!(/Move\(\+,/, "先手:駒を移動(")
+      body.gsub!(/Move\(\-,/, "後手:駒を移動(")
+      body.gsub!(/Drop\(\+,/, "先手:駒を打つ(")
+      body.gsub!(/Drop\(\-,/, "後手:駒を打つ(")
+      body.gsub!(/Square\((\d)(\d)\)/){ "#{$1}<span class='rank'>#{$2}</span>" }
+      body.gsub!(/Checkmate/, "詰み")
+      body.gsub!(/promote/, "成り")
+      body.gsub!(/capture=/, "取る駒：")
+      PIECE_NAMES_FULL.each_pair do |k, v|
+        body.gsub!(k, v)
+      end
+      f.puts "<p class=\"note\">#{prefix}#{body}</p>"
+    end
+  end
+  
+  f.puts <<HTML
+</td></tr></table>
+</body>
+<html>
+HTML
+end
+
+system("firefox result.html")
+
