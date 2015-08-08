@@ -36,6 +36,7 @@ open("result.html", "w") do |f|
   f.puts <<HTML
 <html>
 <head>
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
 <style type="text/css"><!--
 .board{ border-collapse:collapse; }
 .board td{ padding: 0px; width: 25px; height: 25px; border: 1px solid black; }
@@ -66,7 +67,7 @@ HTML
       
       body.gsub!(/ \* /, "<td>&nbsp;</td>")
       body.gsub!(/([\+\-])([A-Z]{2})/){ |player, ptype|
-        "<td><img src=\"image/#{$2.downcase}#{$1 == '+' ? '' : '_r'}.png\" /></td>"
+        "<td><img src=\"image/#{$2.downcase}#{$1 == '+' ? '' : '_r'}.png\" alt=\"#{PIECE_NAMES[$2]}#{$1 == '+' ? '↑' : '↓'}\" /></td>"
       }
       body += "<td class='outline rank'>#{height}</td>"
       
